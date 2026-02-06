@@ -19,11 +19,11 @@ RUN git clone https://github.com/VAST-AI-Research/TripoSG.git /app/triposg
 
 # Install requirements
 WORKDIR /app/triposg
-RUN pip3 install --no-cache-dir -r requirements.txt || \
-    pip3 install --no-cache-dir \
-        transformers accelerate safetensors \
-        trimesh pillow requests numpy \
-        huggingface_hub einops omegaconf
+RUN pip3 install --no-cache-dir \
+        diffusers transformers accelerate safetensors \
+        trimesh pillow requests numpy scipy \
+        huggingface_hub einops omegaconf && \
+    pip3 install --no-cache-dir -r requirements.txt || true
 
 # Pre-download model
 RUN python3 -c "\
