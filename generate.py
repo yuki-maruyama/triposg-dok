@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""TripoSG (2025 SOTA) Generator for Sakura DOK"""
+"""TripoSG Generator for Sakura DOK - uses inference script"""
 import os
 import sys
+import subprocess
 import traceback
 
 artifact_dir = os.environ.get('SAKURA_ARTIFACT_DIR', '/opt/artifact')
@@ -23,13 +24,8 @@ log_file = open(log_path, 'w')
 sys.stdout = Tee(sys.stdout, log_file)
 sys.stderr = Tee(sys.stderr, log_file)
 
-sys.path.insert(0, '/app/triposg')
-
 def main():
     import requests
-    from io import BytesIO
-    from PIL import Image
-    import torch
     
     image_url = os.environ.get('IMAGE_URL')
     if not image_url:
@@ -43,28 +39,43 @@ def main():
     headers = {'User-Agent': 'TripoSG-DOK/1.0'}
     response = requests.get(image_url, timeout=60, headers=headers)
     response.raise_for_status()
-    image = Image.open(BytesIO(response.content)).convert("RGB")
-    print(f"Image: {image.size}")
     
-    # Load pipeline
-    print("Loading TripoSG pipeline...")
-    from triposg.pipelines import TripoSGPipeline
-    pipeline = TripoSGPipeline.from_pretrained("VAST-AI/TripoSG")
-    pipeline.to("cuda")
+    input_path = '/tmp/input.jpg'
+    with open(input_path, 'wb') as f:
+        f.write(response.content)
+    print(f"Saved input image: {len(response.content)} bytes")
     
-    # Generate
-    print("Generating 3D mesh...")
-    with torch.no_grad():
-        outputs = pipeline(image)
-    
-    # Save mesh
+    # Run TripoSG inference
     output_path = os.path.join(artifact_dir, 'output.glb')
-    if hasattr(outputs, 'export'):
-        outputs.export(output_path)
+    print("Running TripoSG inference...")
+    
+    cmd = [
+        'python3', '-m', 'scripts.inference_triposg',
+        '--image-input', input_path,
+        '--output-path', output_path
+    ]
+    
+    result = subprocess.run(
+        cmd,
+        cwd='/app/triposg',
+        capture_output=True,
+        text=True
+    )
+    
+    print("STDOUT:", result.stdout)
+    if result.stderr:
+        print("STDERR:", result.stderr)
+    
+    if result.returncode != 0:
+        print(f"Inference failed with code {result.returncode}")
+        sys.exit(1)
+    
+    if os.path.exists(output_path):
+        print(f"Success! Output: {output_path}")
+        print(f"File size: {os.path.getsize(output_path)} bytes")
     else:
-        outputs[0].export(output_path)
-    print(f"Saved: {output_path}")
-    print(f"File size: {os.path.getsize(output_path)} bytes")
+        print("ERROR: Output file not created")
+        sys.exit(1)
 
 if __name__ == '__main__':
     try:
