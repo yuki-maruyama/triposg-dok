@@ -23,7 +23,7 @@ RUN git clone https://github.com/VAST-AI-Research/TripoSR.git /app/triposr
 
 # Install requirements
 WORKDIR /app/triposr
-RUN pip3 install --upgrade setuptools && \
+RUN pip3 install --upgrade pip setuptools && \
     pip3 install --no-cache-dir -r requirements.txt
 
 WORKDIR /app
