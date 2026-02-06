@@ -22,7 +22,8 @@ WORKDIR /app/triposg
 RUN pip3 install --no-cache-dir \
         diffusers transformers accelerate safetensors \
         trimesh pillow requests numpy scipy \
-        huggingface_hub einops omegaconf && \
+        huggingface_hub einops omegaconf \
+        diso mcubes && \
     pip3 install --no-cache-dir -r requirements.txt || true
 
 # Pre-download model
