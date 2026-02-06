@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
+FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
@@ -6,8 +6,8 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3.10 python3-pip git wget \
-        libgl1-mesa-glx libglib2.0-0 \
+        python3.10 python3-pip python3.10-dev git wget ninja-build \
+        libgl1-mesa-glx libglib2.0-0 build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # PyTorch
