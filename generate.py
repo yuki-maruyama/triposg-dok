@@ -23,6 +23,8 @@ log_file = open(log_path, 'w')
 sys.stdout = Tee(sys.stdout, log_file)
 sys.stderr = Tee(sys.stderr, log_file)
 
+sys.path.insert(0, '/app/triposg')
+
 def main():
     import requests
     from io import BytesIO
@@ -46,18 +48,21 @@ def main():
     
     # Load pipeline
     print("Loading TripoSG pipeline...")
-    from triposg import TripoSGPipeline
+    from triposg.pipelines import TripoSGPipeline
     pipeline = TripoSGPipeline.from_pretrained("VAST-AI/TripoSG")
     pipeline.to("cuda")
     
     # Generate
     print("Generating 3D mesh...")
     with torch.no_grad():
-        mesh = pipeline(image)
+        outputs = pipeline(image)
     
-    # Save
+    # Save mesh
     output_path = os.path.join(artifact_dir, 'output.glb')
-    mesh.export(output_path)
+    if hasattr(outputs, 'export'):
+        outputs.export(output_path)
+    else:
+        outputs[0].export(output_path)
     print(f"Saved: {output_path}")
     print(f"File size: {os.path.getsize(output_path)} bytes")
 

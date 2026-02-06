@@ -14,12 +14,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip3 install --no-cache-dir \
     torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
-# TripoSG from official repo
-RUN pip3 install --no-cache-dir git+https://github.com/VAST-AI-Research/TripoSG.git
+# Clone TripoSG
+RUN git clone https://github.com/VAST-AI-Research/TripoSG.git /app/triposg
+
+# Install requirements
+WORKDIR /app/triposg
+RUN pip3 install --no-cache-dir -r requirements.txt || \
+    pip3 install --no-cache-dir \
+        transformers accelerate safetensors \
+        trimesh pillow requests numpy \
+        huggingface_hub einops omegaconf
 
 # Pre-download model
-RUN python3 -c "from triposg import TripoSGPipeline; TripoSGPipeline.from_pretrained('VAST-AI/TripoSG')" || echo "Model pre-download attempted"
+RUN python3 -c "\
+import sys; sys.path.insert(0, '/app/triposg'); \
+from triposg.pipelines import TripoSGPipeline; \
+TripoSGPipeline.from_pretrained('VAST-AI/TripoSG')" || echo "Model pre-download attempted"
 
+WORKDIR /app
 RUN mkdir -p /opt/artifact
 
 COPY generate.py /app/generate.py
