@@ -17,14 +17,14 @@ RUN pip3 install --no-cache-dir \
 # Clone TripoSG
 RUN git clone https://github.com/VAST-AI-Research/TripoSG.git /app/triposg
 
-# Install requirements
+# Install requirements (from TripoSG requirements.txt)
 WORKDIR /app/triposg
 RUN pip3 install --no-cache-dir \
         diffusers transformers accelerate safetensors \
-        trimesh pillow requests numpy scipy \
+        trimesh pillow requests scipy \
         huggingface_hub einops omegaconf \
-        diso mcubes && \
-    pip3 install --no-cache-dir -r requirements.txt || true
+        opencv-python scikit-image peft jaxtyping typeguard \
+        diso pymeshlab numpy==1.22.3
 
 # Pre-download model
 RUN python3 -c "\
