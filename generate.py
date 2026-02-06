@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TripoSG Generator for Sakura DOK - uses inference script"""
+"""TripoSR Generator for Sakura DOK"""
 import os
 import sys
 import subprocess
@@ -36,28 +36,28 @@ def main():
     
     # Download image
     print("Downloading image...")
-    headers = {'User-Agent': 'TripoSG-DOK/1.0'}
+    headers = {'User-Agent': 'TripoSR-DOK/1.0'}
     response = requests.get(image_url, timeout=60, headers=headers)
     response.raise_for_status()
     
-    input_path = '/tmp/input.jpg'
+    input_path = '/tmp/input.png'
     with open(input_path, 'wb') as f:
         f.write(response.content)
     print(f"Saved input image: {len(response.content)} bytes")
     
-    # Run TripoSG inference
-    output_path = os.path.join(artifact_dir, 'output.glb')
-    print("Running TripoSG inference...")
+    # Run TripoSR
+    print("Running TripoSR...")
     
     cmd = [
-        'python3', '-m', 'scripts.inference_triposg',
-        '--image-input', input_path,
-        '--output-path', output_path
+        'python3', 'run.py',
+        input_path,
+        '--output-dir', artifact_dir,
+        '--model-save-format', 'glb'
     ]
     
     result = subprocess.run(
         cmd,
-        cwd='/app/triposg',
+        cwd='/app/triposr',
         capture_output=True,
         text=True
     )
@@ -70,12 +70,19 @@ def main():
         print(f"Inference failed with code {result.returncode}")
         sys.exit(1)
     
-    if os.path.exists(output_path):
-        print(f"Success! Output: {output_path}")
-        print(f"File size: {os.path.getsize(output_path)} bytes")
-    else:
-        print("ERROR: Output file not created")
-        sys.exit(1)
+    # Find output file
+    for f in os.listdir(artifact_dir):
+        if f.endswith('.glb'):
+            output_path = os.path.join(artifact_dir, f)
+            # Rename to output.glb
+            final_path = os.path.join(artifact_dir, 'output.glb')
+            os.rename(output_path, final_path)
+            print(f"Success! Output: {final_path}")
+            print(f"File size: {os.path.getsize(final_path)} bytes")
+            return
+    
+    print("ERROR: No GLB output found")
+    sys.exit(1)
 
 if __name__ == '__main__':
     try:

@@ -1,40 +1,26 @@
-FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
-ENV CUDA_HOME=/usr/local/cuda
-ENV PATH=/usr/local/cuda/bin:$PATH
-ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-ENV CPATH=/usr/local/cuda/include:$CPATH
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3.10 python3-pip python3.10-dev git wget ninja-build \
-        libgl1-mesa-glx libglib2.0-0 build-essential \
+        python3.10 python3-pip git wget \
+        libgl1-mesa-glx libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # PyTorch
 RUN pip3 install --no-cache-dir \
     torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
-# Clone TripoSG
-RUN git clone https://github.com/VAST-AI-Research/TripoSG.git /app/triposg
+# Clone TripoSR (the simpler, faster model)
+RUN git clone https://github.com/VAST-AI-Research/TripoSR.git /app/triposr
 
-# Install requirements (from TripoSG requirements.txt)
-WORKDIR /app/triposg
-RUN pip3 install --no-cache-dir \
-        diffusers transformers accelerate safetensors \
-        trimesh pillow requests scipy \
-        huggingface_hub einops omegaconf \
-        opencv-python scikit-image peft jaxtyping typeguard \
-        diso pymeshlab numpy==1.22.3
-
-# Pre-download model
-RUN python3 -c "\
-import sys; sys.path.insert(0, '/app/triposg'); \
-from triposg.pipelines import TripoSGPipeline; \
-TripoSGPipeline.from_pretrained('VAST-AI/TripoSG')" || echo "Model pre-download attempted"
+# Install requirements
+WORKDIR /app/triposr
+RUN pip3 install --upgrade setuptools && \
+    pip3 install --no-cache-dir -r requirements.txt
 
 WORKDIR /app
 RUN mkdir -p /opt/artifact
