@@ -52,7 +52,8 @@ def main():
         'python3', 'run.py',
         input_path,
         '--output-dir', artifact_dir,
-        '--model-save-format', 'glb'
+        '--model-save-format', 'glb',
+        '--pretrained-model-name-or-path', '/app/models/TripoSR'
     ]
     
     result = subprocess.run(

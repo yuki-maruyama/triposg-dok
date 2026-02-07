@@ -33,5 +33,16 @@ RUN pip3 install --upgrade pip setuptools && \
 WORKDIR /app
 RUN mkdir -p /opt/artifact
 
+# Pre-download models during build (saves ~2min on each run)
+ENV HF_HOME=/app/models
+ENV U2NET_HOME=/app/models/u2net
+
+# TripoSR model from HuggingFace (~1.6GB)
+RUN python3 -c "from huggingface_hub import snapshot_download; snapshot_download('stabilityai/TripoSR', local_dir='/app/models/TripoSR')"
+
+# rembg model (u2net.onnx ~176MB for background removal)
+RUN mkdir -p /app/models/u2net && \
+    wget -q -O /app/models/u2net/u2net.onnx https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx
+
 COPY generate.py /app/generate.py
 ENTRYPOINT ["python3", "/app/generate.py"]
