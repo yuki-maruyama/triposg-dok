@@ -28,7 +28,7 @@ ENV TORCH_CUDA_ARCH_LIST="7.0"
 
 RUN pip3 install --upgrade pip setuptools && \
     pip3 install --no-cache-dir -r requirements.txt && \
-    pip3 install --no-cache-dir onnxruntime-gpu
+    pip3 install --no-cache-dir onnxruntime
 
 WORKDIR /app
 RUN mkdir -p /opt/artifact
