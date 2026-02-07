@@ -23,6 +23,9 @@ RUN git clone https://github.com/VAST-AI-Research/TripoSR.git /app/triposr
 
 # Install requirements
 WORKDIR /app/triposr
+# V100 GPU uses compute capability 7.0
+ENV TORCH_CUDA_ARCH_LIST="7.0"
+
 RUN pip3 install --upgrade pip setuptools && \
     pip3 install --no-cache-dir -r requirements.txt && \
     pip3 install --no-cache-dir onnxruntime-gpu
