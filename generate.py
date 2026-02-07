@@ -26,19 +26,24 @@ sys.stderr = Tee(sys.stderr, log_file)
 
 def main():
     import requests
+    import shutil
     
     image_url = os.environ.get('IMAGE_URL')
     if not image_url:
         print("ERROR: IMAGE_URL not set")
-        sys.exit(1)
+        return False
     
     print(f"Input: {image_url}")
     
     # Download image
     print("Downloading image...")
-    headers = {'User-Agent': 'TripoSR-DOK/1.0'}
-    response = requests.get(image_url, timeout=60, headers=headers)
-    response.raise_for_status()
+    try:
+        headers = {'User-Agent': 'TripoSR-DOK/1.0'}
+        response = requests.get(image_url, timeout=60, headers=headers)
+        response.raise_for_status()
+    except Exception as e:
+        print(f"ERROR: Failed to download image: {e}")
+        return False
     
     input_path = '/tmp/input.png'
     with open(input_path, 'wb') as f:
@@ -68,18 +73,17 @@ def main():
         print("STDERR:", result.stderr)
     
     if result.returncode != 0:
-        print(f"Inference failed with code {result.returncode}")
-        sys.exit(1)
+        print(f"WARNING: Inference exited with code {result.returncode}")
+        # Don't return False here - check for output first
     
     # Find output file (TripoSR outputs to 0/mesh.glb)
-    import shutil
     mesh_path = os.path.join(artifact_dir, '0', 'mesh.glb')
     if os.path.exists(mesh_path):
         final_path = os.path.join(artifact_dir, 'output.glb')
         shutil.copy(mesh_path, final_path)
         print(f"Success! Output: {final_path}")
         print(f"File size: {os.path.getsize(final_path)} bytes")
-        return
+        return True
     
     # Fallback: search for any GLB
     for root, dirs, files in os.walk(artifact_dir):
@@ -90,17 +94,23 @@ def main():
                 shutil.copy(src, final_path)
                 print(f"Success! Output: {final_path}")
                 print(f"File size: {os.path.getsize(final_path)} bytes")
-                return
+                return True
     
     print("ERROR: No GLB output found")
-    sys.exit(1)
+    return False
 
 if __name__ == '__main__':
     try:
-        main()
+        success = main()
+        if success:
+            print("=== Task completed successfully ===")
+        else:
+            print("=== Task completed with errors (check log) ===")
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         traceback.print_exc()
-        sys.exit(1)
+        print("=== Task completed with exception ===")
     finally:
         log_file.close()
+    # Always exit 0 for DOK
+    sys.exit(0)
