@@ -70,16 +70,26 @@ def main():
         print(f"Inference failed with code {result.returncode}")
         sys.exit(1)
     
-    # Find output file
-    for f in os.listdir(artifact_dir):
-        if f.endswith('.glb'):
-            output_path = os.path.join(artifact_dir, f)
-            # Rename to output.glb
-            final_path = os.path.join(artifact_dir, 'output.glb')
-            os.rename(output_path, final_path)
-            print(f"Success! Output: {final_path}")
-            print(f"File size: {os.path.getsize(final_path)} bytes")
-            return
+    # Find output file (TripoSR outputs to 0/mesh.glb)
+    import shutil
+    mesh_path = os.path.join(artifact_dir, '0', 'mesh.glb')
+    if os.path.exists(mesh_path):
+        final_path = os.path.join(artifact_dir, 'output.glb')
+        shutil.copy(mesh_path, final_path)
+        print(f"Success! Output: {final_path}")
+        print(f"File size: {os.path.getsize(final_path)} bytes")
+        return
+    
+    # Fallback: search for any GLB
+    for root, dirs, files in os.walk(artifact_dir):
+        for f in files:
+            if f.endswith('.glb'):
+                src = os.path.join(root, f)
+                final_path = os.path.join(artifact_dir, 'output.glb')
+                shutil.copy(src, final_path)
+                print(f"Success! Output: {final_path}")
+                print(f"File size: {os.path.getsize(final_path)} bytes")
+                return
     
     print("ERROR: No GLB output found")
     sys.exit(1)
